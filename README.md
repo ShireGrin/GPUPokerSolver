@@ -40,7 +40,7 @@ LibTorch (Optional): Required if evaluating via Neural Networks.
 ## Compilation Steps
 ### 1. Clone the repository
 ```
-git clone [https://github.com/ShireGrin/GPUPokerSolver.git](https://github.com/ShireGrin/GPUPokerSolver.git)
+git clone https://github.com/ShireGrin/GPUPokerSolver.git
 cd GPUPokerSolver
 ```
 
