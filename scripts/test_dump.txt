@@ -1,0 +1,9 @@
+set_pot 19.49
+set_effective_stack 2.42
+set_board 3d,7d,2h
+set_range_oop 99+,AJs+,AQo+,KQs,QJs,JTs,T9s,98s
+set_range_ip TT-JJ,AQs,AQo,KQs
+set_bet_sizes oop,flop,bet,30,70
+set_bet_sizes ip,flop,bet,30,70
+build_tree
+dump_training_sample 1,0.05,0.0

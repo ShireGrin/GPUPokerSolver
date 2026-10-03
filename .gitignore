@@ -1,0 +1,21 @@
+build/
+jpbuild/
+*.tar.gz
+
+*.o
+
+scripts/batch_*.txt
+# Virtual environments and weights
+venv/
+__pycache__/
+*.pth
+*.pt
+
+
+dist/
+
+
+gitlog.txt
+.env
+
+docker-compose.override.yml

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: texassolver_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_SOLVER_USER}
+      POSTGRES_PASSWORD: ${DB_SOLVER_PASSWORD}
+    ports:
+      - "${DB_SOLVER_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

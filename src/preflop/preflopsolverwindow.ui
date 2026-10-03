@@ -1,0 +1,742 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PreflopSolverWindow</class>
+ <widget class="QMainWindow" name="PreflopSolverWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1024</width>
+    <height>700</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Multi-Handed Preflop Solver</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>15</number>
+    </property>
+    <property name="leftMargin">
+     <number>10</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
+    </property>
+    <property name="rightMargin">
+     <number>10</number>
+    </property>
+    <property name="bottomMargin">
+     <number>10</number>
+    </property>
+    <item>
+     <!-- Left Column: Solver Setup and Controls -->
+     <widget class="QFrame" name="leftPanel">
+      <property name="minimumSize">
+       <size>
+        <width>320</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>380</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="leftLayout">
+       <property name="spacing">
+        <number>8</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="configHeaderLabel">
+         <property name="text">
+          <string>&lt;b&gt;Preflop Solver Setup&lt;/b&gt;</string>
+         </property>
+         <property name="font">
+          <font>
+           <pointSize>12</pointSize>
+          </font>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="scrollArea">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents">
+          <layout class="QVBoxLayout" name="scrollLayout">
+           <property name="spacing">
+            <number>10</number>
+           </property>
+           <!-- Table Configuration -->
+           <item>
+            <widget class="QGroupBox" name="tableGroupBox">
+             <property name="title">
+              <string>Table Configuration</string>
+             </property>
+             <layout class="QFormLayout" name="tableFormLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelTableSize">
+                <property name="text">
+                 <string>Players:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="tableSizeSpinBox">
+                <property name="minimum">
+                 <number>3</number>
+                </property>
+                <property name="maximum">
+                 <number>9</number>
+                </property>
+                <property name="value">
+                 <number>3</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelSB">
+                <property name="text">
+                 <string>Small Blind:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="sbSpinBox">
+                <property name="value">
+                 <number>5.0</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelBB">
+                <property name="text">
+                 <string>Big Blind:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QDoubleSpinBox" name="bbSpinBox">
+                <property name="value">
+                 <number>10.0</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="labelAnte">
+                <property name="text">
+                 <string>Ante (per player):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QDoubleSpinBox" name="anteSpinBox">
+                <property name="value">
+                 <number>1.0</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="labelHandName">
+                <property name="text">
+                 <string>Hand Name/ID:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="handNameLineEdit">
+                <property name="placeholderText">
+                 <string>Optional hand name or ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <!-- Payouts (ICM vs Cash) -->
+           <item>
+            <widget class="QGroupBox" name="payoutsGroupBox">
+             <property name="title">
+              <string>Payouts &amp; ICM</string>
+             </property>
+             <layout class="QVBoxLayout" name="payoutsLayout">
+              <item>
+               <widget class="QCheckBox" name="icmCheckBox">
+                <property name="text">
+                 <string>Enable ICM Mode</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelPayouts">
+                <property name="text">
+                 <string>Payout Percentages (e.g. 50,30,20):</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="payoutsLineEdit">
+                <property name="placeholderText">
+                 <string>e.g. 50,30,20 (defaults to standard 5-place payouts if empty)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QFormLayout" name="payoutHelperFormLayout">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="labelPrizePool">
+                  <property name="text">
+                   <string>Prize Pool ($):</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QDoubleSpinBox" name="prizePoolSpinBox">
+                  <property name="maximum">
+                   <double>9999999.0</double>
+                  </property>
+                  <property name="value">
+                   <double>14.40</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="labelPlacesPaid">
+                  <property name="text">
+                   <string>Places Paid:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="placesPaidSpinBox">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="value">
+                   <number>5</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QPushButton" name="generatePayoutsButton">
+                <property name="text">
+                 <string>Generate Payouts</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <!-- Sizing Rules -->
+           <item>
+            <widget class="QGroupBox" name="sizingGroupBox">
+             <property name="title">
+              <string>Bet Sizing Rules (in BB)</string>
+             </property>
+             <layout class="QFormLayout" name="sizingFormLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelRFI">
+                <property name="text">
+                 <string>Open Size (RFI):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QDoubleSpinBox" name="rfiSpinBox">
+                <property name="value">
+                 <number>2.0</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label3Bet">
+                <property name="text">
+                 <string>3-Bet Size:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="threeBetSpinBox">
+                <property name="value">
+                 <number>3.0</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label4Bet">
+                <property name="text">
+                 <string>4-Bet Size:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QDoubleSpinBox" name="fourBetSpinBox">
+                <property name="value">
+                 <number>2.5</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="allowAllInCheckBox">
+                <property name="text">
+                 <string>Include All-In (Shove) Options</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <!-- Position/Stack/Range Editor Table -->
+           <item>
+            <widget class="QGroupBox" name="playersGroupBox">
+             <property name="title">
+              <string>Players Stacks &amp; Ranges</string>
+             </property>
+             <layout class="QVBoxLayout" name="playersLayout">
+              <property name="spacing">
+               <number>4</number>
+              </property>
+              <item>
+               <widget class="QTableWidget" name="playersTableWidget">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>150</height>
+                 </size>
+                </property>
+                <column>
+                 <property name="text">
+                  <string>Position</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Stack (Chips)</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Range</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <!-- Solver Options -->
+           <item>
+            <widget class="QGroupBox" name="solverGroupBox">
+             <property name="title">
+              <string>Solver Engine Options</string>
+             </property>
+             <layout class="QFormLayout" name="solverFormLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelIterations">
+                <property name="text">
+                 <string>Iterations:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="iterationsSpinBox">
+                <property name="minimum">
+                 <number>10</number>
+                </property>
+                <property name="maximum">
+                 <number>50000</number>
+                </property>
+                <property name="value">
+                 <number>5000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelEQR">
+                <property name="text">
+                 <string>EQR Profile:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="eqrProfileComboBox">
+                <item>
+                 <property name="text">
+                  <string>Default / Balanced EQR</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Tight Preflop EQR</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Loose/Aggressive EQR</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="useNeuralNetCheckBox">
+                <property name="text">
+                 <string>Use Neural Network for Postflop EVs</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="labelNNModel">
+                <property name="text">
+                 <string>NN Model:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <layout class="QHBoxLayout" name="nnModelLayout">
+                <property name="spacing">
+                 <number>4</number>
+                </property>
+                <item>
+                 <widget class="QLineEdit" name="nnModelPathLineEdit">
+                  <property name="placeholderText">
+                   <string>Path to .pt model file</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="nnModelBrowseButton">
+                  <property name="text">
+                   <string>Browse...</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <!-- Saved Solves Browser -->
+           <item>
+            <widget class="QGroupBox" name="savedSolvesGroupBox">
+             <property name="title">
+              <string>Saved Solves</string>
+             </property>
+             <layout class="QVBoxLayout" name="savedSolvesLayout">
+              <item>
+               <widget class="QLineEdit" name="solvesFilterEdit">
+                <property name="placeholderText">
+                 <string>Filter solves by name...</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QTreeView" name="solvesTreeView">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>150</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>200</height>
+                 </size>
+                </property>
+                <property name="editTriggers">
+                 <set>QAbstractItemView::NoEditTriggers</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <!-- Control Buttons -->
+       <item>
+        <layout class="QHBoxLayout" name="controlButtonsLayout">
+         <item>
+          <widget class="QPushButton" name="buildTreeButton">
+           <property name="text">
+            <string>Build Tree</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="solveButton">
+           <property name="text">
+            <string>Solve</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="stopButton">
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="saveLoadButtonsLayout">
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="text">
+            <string>Save Solve</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loadButton">
+           <property name="text">
+            <string>Load Solve</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <!-- Realtime Feedback -->
+       <item>
+        <widget class="QProgressBar" name="progressBar">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="statusLabel">
+         <property name="text">
+          <string>Status: Not solving</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- Middle Column: Preflop Tree Viewer -->
+    <item>
+     <widget class="QFrame" name="middlePanel">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>350</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="middleLayout">
+       <item>
+        <widget class="QLabel" name="treeHeaderLabel">
+         <property name="text">
+          <string>&lt;b&gt;Preflop Betting Tree&lt;/b&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTreeView" name="preflopTreeView">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="headerHidden">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- Right Column: Strategy Grid -->
+    <item>
+     <widget class="QFrame" name="rightPanel">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="rightLayout">
+       <item>
+        <layout class="QHBoxLayout" name="rightHeaderLayout">
+         <item>
+          <widget class="QLabel" name="strategyHeaderLabel">
+           <property name="text">
+            <string>&lt;b&gt;Preflop Range Strategy Grid&lt;/b&gt;</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointSize>11</pointSize>
+            </font>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="headerSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="activePlayerLabel">
+           <property name="text">
+            <string>Active Position: --</string>
+           </property>
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <!-- Custom Strategy View -->
+        <widget class="QTableView" name="strategyTableView">
+         <property name="minimumSize">
+          <size>
+           <width>400</width>
+           <height>400</height>
+          </size>
+         </property>
+         <attribute name="horizontalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+       <!-- Legend and Info -->
+       <item>
+        <layout class="QHBoxLayout" name="legendLayout">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="legendFoldLabel">
+           <property name="text">
+            <string>■ Fold (Blue)</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(0, 150, 255); font-weight: bold;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="legendCallLabel">
+           <property name="text">
+            <string>■ Call (Green)</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(0, 200, 50); font-weight: bold;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="legendRaiseLabel">
+           <property name="text">
+            <string>■ Raise / Bet (Red)</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(220, 50, 50); font-weight: bold;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="legendAllInLabel">
+           <property name="text">
+            <string>■ All-In (Purple)</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: rgb(150, 0, 150); font-weight: bold;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="legendSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="logTextEdit">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>150</height>
+          </size>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="placeholderText">
+          <string>Solver log output...</string>
+         </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+           <pointSize>9</pointSize>
+          </font>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
