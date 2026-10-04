@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
     qSolverJob->setContext(this->getLogArea());
     qSolverJob->current_mission = QSolverJob::MissionType::LOADING;
     qSolverJob->start();
-    this->setWindowTitle(tr("TexasSolver"));
+    this->setWindowTitle(tr("GPUPokerSolver"));
 
     // parameters table view
     qParametersModel = DBManager::instance().getParametersModel(this);
@@ -197,7 +197,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 this->m_currentHandId = hand.id_hand;
                 this->m_currentParentSolveId = -1; // Reset lineage for new imported hand
                 ui->iterationText->setText("5000");
-                ui->logIntervalText->setText("80");
+                ui->logIntervalText->setText("40");
 
                 // All-in options
                 ui->flop_ip_allin->setChecked(hand.ip_flop_allin);
@@ -651,7 +651,7 @@ void MainWindow::on_ip_range(QString range_text){
     this->ui->ipRangeText->setText(range_text);
 }
 
-void MainWindow::on_buttomSolve_clicked()
+void MainWindow::on_buttonSolve_clicked()
 {   
     int threads = ui->threadsText->text().toInt();
     unsigned int max_cores = std::thread::hardware_concurrency();

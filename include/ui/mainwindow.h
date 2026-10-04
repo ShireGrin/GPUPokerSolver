@@ -34,7 +34,7 @@ public:
     QSTextEdit * get_logwindow();
 
 private slots:
-    void on_buttomSolve_clicked();
+    void on_buttonSolve_clicked();
     void on_clearLogButtom_clicked();
     void on_buildTreeButtom_clicked();
     void on_actionjson_triggered();

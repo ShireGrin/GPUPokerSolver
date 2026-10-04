@@ -40,9 +40,8 @@ float BestResponse::printExploitability(const shared_ptr<GameTreeNode>& root, in
     if(this->reach_probs.empty())
         this->reach_probs = vector<vector<float>> (this->player_number);
 
-    qDebug().noquote() << QString::fromStdString(tfm::format(QObject::tr("Iter: %s").toStdString().c_str(),iterationCount));
+    //qDebug().noquote() << QString::fromStdString(tfm::format(QObject::tr("Iter: %s").toStdString().c_str(),iterationCount));
     float exploitible = 0;
-    // 构造双方初始reach probs(按照手牌weights)
     for (int player_id = 0; player_id < this->player_number; player_id++) {
         if(reach_probs[player_id].empty()) {
             reach_probs[player_id] = vector<float>(private_combos[player_id].size());
@@ -57,7 +56,7 @@ float BestResponse::printExploitability(const shared_ptr<GameTreeNode>& root, in
         qDebug().noquote() << (QString::fromStdString(tfm::format(QObject::tr("player %s exploitability %s").toStdString().c_str(), player_id, player_exploitability)));
     }
     float total_exploitability = exploitible / this->player_number / initial_pot * 100;
-    qDebug().noquote() << QString::fromStdString(tfm::format(QObject::tr("Total exploitability %s precent").toStdString().c_str(), total_exploitability));
+    qDebug().noquote() << QString::fromStdString(tfm::format(QObject::tr("Total exploitability %s precent\n").toStdString().c_str(), total_exploitability));
     return total_exploitability;
 }
 

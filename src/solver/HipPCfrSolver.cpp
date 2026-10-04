@@ -111,7 +111,7 @@ void reportGpuMemory(const std::string& label) {
     double total_gb = static_cast<double>(total_bytes) / (1024.0 * 1024.0 * 1024.0);
     double used_gb = total_gb - free_gb;
 
-    std::cout << "[" << label << "] VRAM Usage: " 
+    qDebug().noquote() << "[" << label << "] VRAM Usage: " 
         << used_gb << " GB Used / " 
         << total_gb << " GB Total (" 
         << free_gb << " GB Free)\n";
@@ -583,7 +583,7 @@ void HipPCfrSolver::train() {
     float win_payoff = 1.0f;  // Standard pot win utility scaling multiplier
     float lose_payoff = -1.0f;
 
-    std::cout << "Starting GPU Solver in " << (use_fp16 ? "FP16 half-precision" : "FP32 single-precision") << " mode." << std::endl;
+    qDebug().noquote() << "Starting GPU Solver in " << (use_fp16 ? "FP16 half-precision" : "FP32 single-precision") << " mode.";
 
 
     // Set initial reach probabilities at root for BOTH players
@@ -745,19 +745,18 @@ void HipPCfrSolver::train() {
             std::chrono::duration<double> total_duration = current_time - start_time;
             double block_avg = block_duration.count() / print_interval;
             double total_avg = total_duration.count() / iter;
-            std::cout << "Iteration " << iter << " GTO solve in progress...\n"
+            qDebug().noquote() << "Iteration " << iter << " GTO solve in progress...\n"
                 << "  -> Last " << print_interval << " iters: " 
-                << std::fixed << std::setprecision(3) << block_duration.count() << "s "
+                << block_duration.count() << "s "
                 << "(" << block_avg << " s/iter)\n"
                 << "  -> Total avg so far: " << total_avg << " s/iter\n" 
-                << "  -> Total duration so far: " << std::setprecision(3) << total_duration.count() << "s" << "\n" 
-                << std::endl;
+                << "  -> Total duration so far: " << total_duration.count() << "s";
 
             this->last_iteration = iter;
             last_checkpoint_time = current_time;
         }
 
-        if (iter > 0 && iter % 160 == 0) {
+        if (iter > 0 && iter % print_interval == 0) {
             syncStrategiesToCpuTree();
             calculateEvs();
             float exploitability = br.printExploitability(tree->getRoot(), iter, tree->getRoot()->getPot(), initial_board_long);
@@ -765,14 +764,14 @@ void HipPCfrSolver::train() {
             this->last_iteration = iter;
 
             if (this->accuracy > 0.0f && exploitability <= this->accuracy) {
-                std::cout << "Target accuracy of " << this->accuracy << "% reached (current exploitability: " << exploitability << "%). Stopping solver early." << std::endl;
+                qDebug().noquote() << "Target accuracy of " << this->accuracy << "% reached (current exploitability: " << exploitability << "%). Stopping solver early.";
                 break;
             }
         }
 
     }
 
-    std::cout << "Solve finished" << std::endl;
+    qDebug().noquote() << "Solve finished";
 
     syncStrategiesToCpuTree();
 
@@ -828,32 +827,32 @@ void HipPCfrSolver::printExpectedVramUsage() {
     double total_mb = static_cast<double>(total_bytes) / (1024.0 * 1024.0);
     double total_gb = total_mb / 1024.0;
 
-    std::cout << "\n==================================================\n";
-    std::cout << "          VRAM OCCUPATION PREDICTION             \n";
-    std::cout << "==================================================\n";
-    std::cout << "Precision Mode:          " << (use_fp16 ? "FP16 (2 Bytes)" : "FP32 (4 Bytes)") << "\n";
-    std::cout << "Total Game States:       " << h_states.size() << "\n";
-    std::cout << "Total Trainable Slots:   " << total_trainable_size << std::endl;
-    std::cout << "Private Hand Combos:     " << total_node_data_size << " (Ranges OOP + IP)" << std::endl;
-    std::cout << "--------------------------------------------------" << std::endl; std::cout << std::fixed << std::setprecision(2);
-    std::cout << "d_states Buffer:         " << static_cast<double>(states_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "d_regrets Buffer:        " << static_cast<double>(regrets_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "d_cum_strategies Buffer: " << static_cast<double>(cum_strategies_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "d_locked Buffer:         " << static_cast<double>(locked_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "d_reach_probs Buffer:    " << static_cast<double>(reach_probs_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "d_utilities Buffer:      " << static_cast<double>(utilities_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "Showdown Precalc Buffers:" << static_cast<double>(showdowns_bytes + showdown_combs_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "Misc (Maps) Buffers:       " << static_cast<double>(map_bytes) / (1024.0 * 1024.0) << " MB\n";
-    std::cout << "--------------------------------------------------\n";
-    std::cout << "ESTIMATED TOTAL DEMAND:  " << total_mb << " MB (" << total_gb << " GB)\n";
-    std::cout << "==================================================\n\n";
+    qDebug().noquote() << "==================================================";
+    qDebug().noquote() << "          VRAM OCCUPATION PREDICTION             ";
+    qDebug().noquote() << "==================================================";
+    qDebug().noquote() << "Precision Mode:          " << (use_fp16 ? "FP16 (2 Bytes)" : "FP32 (4 Bytes)");
+    qDebug().noquote() << "Total Game States:       " << h_states.size();
+    qDebug().noquote() << "Total Trainable Slots:   " << total_trainable_size;
+    qDebug().noquote() << "Private Hand Combos:     " << total_node_data_size << " (Ranges OOP + IP)";
+    qDebug().noquote() << "------------------------------------------------------------------------------------------";
+    qDebug().noquote() << "d_states Buffer:         " << static_cast<double>(states_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "d_regrets Buffer:        " << static_cast<double>(regrets_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "d_cum_strategies Buffer: " << static_cast<double>(cum_strategies_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "d_locked Buffer:         " << static_cast<double>(locked_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "d_reach_probs Buffer:    " << static_cast<double>(reach_probs_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "d_utilities Buffer:      " << static_cast<double>(utilities_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "Showdown Precalc Buffers:" << static_cast<double>(showdowns_bytes + showdown_combs_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "Misc (Maps) Buffers:       " << static_cast<double>(map_bytes) / (1024.0 * 1024.0) << " MB";
+    qDebug().noquote() << "------------------------------------------------------------------------------------------";
+    qDebug().noquote() << "ESTIMATED TOTAL DEMAND:  " << total_mb << " MB (" << total_gb << " GB)";
+    qDebug().noquote() << "==================================================\n";
 
     size_t free_byte;
     size_t total_byte;
     hipError_t hip_status = hipMemGetInfo(&free_byte, &total_byte);
 
     if (hipSuccess != hip_status) {
-        std::cerr << "Error: hipMemGetInfo fails, " << hipGetErrorString(hip_status) << std::endl;
+        std::cerr << "Error: hipMemGetInfo fails, " << hipGetErrorString(hip_status);
         exit(1);
     }
     
@@ -895,7 +894,7 @@ void HipPCfrSolver::syncStrategiesToCpuTree() {
             if (val < min_cs) min_cs = val;
             if (val != 0.0f) non_zero_count++;
         }
-        std::cout << "DEBUG SYNC: h_cum_strategies stats: max=" << max_cs << ", min=" << min_cs << ", non-zero count=" << non_zero_count << "/" << total_trainable_size << std::endl;
+        qDebug().noquote() << "DEBUG SYNC: h_cum_strategies stats: max=" << max_cs << ", min=" << min_cs << ", non-zero count=" << non_zero_count << "/" << total_trainable_size;
     }
 
     // 2. Write flat cumulative strategies back to their corresponding ActionNode trainables in parallel
@@ -923,7 +922,6 @@ void HipPCfrSolver::syncStrategiesToCpuTree() {
 // Inherited methods dumps, get_strategy, get_evs, get_trainable from PCfrSolver are used directly.
 
 void HipPCfrSolver::calculateEvs() {
-    std::cout << "Collecting final tree statistics (calculating average strategy EVs on CPU)..." << std::endl;
     this->collecting_statics = true;
     this->use_average_strategy_for_cfr = true;
     
@@ -936,5 +934,4 @@ void HipPCfrSolver::calculateEvs() {
     this->collecting_statics = false;
     this->use_average_strategy_for_cfr = false;
     this->statics_collected = true;
-    std::cout << "Statistics collection complete. EVs calculated successfully." << std::endl;
 }

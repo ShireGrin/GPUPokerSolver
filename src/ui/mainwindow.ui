@@ -1005,7 +1005,7 @@
                                                     <item>
                                                         <widget class="QLineEdit" name="logIntervalText">
                                                             <property name="text">
-                                                                <string>80</string>
+                                                                <string>40</string>
                                                             </property>
                                                         </widget>
                                                     </item>
@@ -1055,7 +1055,7 @@
                                             <item>
                                                 <layout class="QHBoxLayout" name="horizontalLayout" stretch="6,2,2">
                                                     <item>
-                                                        <widget class="QPushButton" name="buttomSolve">
+                                                        <widget class="QPushButton" name="buttonSolve">
                                                             <property name="sizePolicy">
                                                                 <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
                                                                     <horstretch>0</horstretch>

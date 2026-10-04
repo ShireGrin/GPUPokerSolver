@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 #include <queue>
+#include <QDebug>
 
 #include "include/solver/GpuTypes.h"
 

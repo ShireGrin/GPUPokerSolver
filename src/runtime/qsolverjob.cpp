@@ -38,17 +38,41 @@ void QSolverJob::run()
                       << ", stack=" << stack 
                       << ", raise_limit=" << raise_limit << std::endl;
             this->build_tree();
-            if(this->mode == Mode::HOLDEM){
+            if(this->mode == Mode::HOLDEM) {
                 this->ps_holdem.buildSolverOnly(
-                    this->range_ip, this->range_oop, this->board, "", max_iteration, this->print_interval, "discounted_cfr", -1, this->accuracy, this->use_isomorphism, this->use_halffloats, this->thread_number, this->engineType
+                    this->range_ip,
+                    this->range_oop,
+                    this->board,
+                    "",
+                    max_iteration,
+                    this->print_interval,
+                    "discounted_cfr",
+                    -1,
+                    this->accuracy,
+                    this->use_isomorphism,
+                    this->use_halffloats,
+                    this->thread_number,
+                    this->engineType
                 );
                 this->ps_holdem.get_solver()->load_solve_from_file(this->solve_filepath);
                 if (this->loaded_exploitability >= 0.0) {
                     this->ps_holdem.get_solver()->last_exploitability = this->loaded_exploitability;
                 }
-            }else if(this->mode == Mode::SHORTDECK){
+            } else if (this->mode == Mode::SHORTDECK){
                 this->ps_shortdeck.buildSolverOnly(
-                    this->range_ip, this->range_oop, this->board, "", max_iteration, this->print_interval, "discounted_cfr", -1, this->accuracy, this->use_isomorphism, this->use_halffloats, this->thread_number, this->engineType
+                    this->range_ip,
+                    this->range_oop,
+                    this->board,
+                    "",
+                    max_iteration,
+                    this->print_interval,
+                    "discounted_cfr",
+                    -1,
+                    this->accuracy,
+                    this->use_isomorphism,
+                    this->use_halffloats,
+                    this->thread_number,
+                    this->engineType
                 );
                 this->ps_shortdeck.get_solver()->load_solve_from_file(this->solve_filepath);
                 if (this->loaded_exploitability >= 0.0) {
@@ -121,9 +145,7 @@ void QSolverJob::stop(){
 }
 
 void QSolverJob::solving(){
-    // TODO  为什么ui上多次求解会积累memory？哪里leak了？
-    // TODO  为什么有时候会莫名闪退？
-    qDebug().noquote() << tr("Start Solving..");//.toStdString() << std::endl;
+    qDebug().noquote() << tr("Start Solving...");//.toStdString() << std::endl;
 
     this->solveStartTime = QDateTime::currentMSecsSinceEpoch();
     this->totalSolveTimeMs = 0;
