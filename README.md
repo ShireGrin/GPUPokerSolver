@@ -62,11 +62,11 @@ qmake ../GPUPokerSolver.pro
 1. **Install PyTorch** depending on your hardware:
    - **AMD (ROCm):** 
      ```bash
-     pip install torch torchvision --index-url [https://download.pytorch.org/whl/rocm6.0](https://download.pytorch.org/whl/rocm7.2)
+     pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm7.2
      ```
    - **NVIDIA (CUDA):** 
      ```bash
-     pip install torch torchvision --index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
+     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
      ```
    - **CPU Only:** 
      ```bash
