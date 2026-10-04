@@ -1,269 +1,269 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PT4ImportDialog</class>
- <widget class="QDialog" name="PT4ImportDialog">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>800</width>
-    <height>600</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Import Hand from PokerTracker 4</string>
-  </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
-    <layout class="QGridLayout" name="filterGridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Player Name:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="playerSearchEdit"/>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="labelHandNo">
-       <property name="text">
-        <string>Hand #:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="QLineEdit" name="handNoSearchEdit"/>
-     </item>
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="dateFilterCheckBox">
-       <property name="text">
-        <string>Filter by Date</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QDateEdit" name="startDateEdit">
-       <property name="calendarPopup">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2" alignment="Qt::AlignCenter">
-      <widget class="QLabel" name="labelTo">
-       <property name="text">
-        <string>to</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <layout class="QHBoxLayout" name="dateSearchLayout">
-       <item>
-        <widget class="QDateEdit" name="endDateEdit">
-         <property name="calendarPopup">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="searchButton">
-         <property name="text">
-          <string>Search Hands</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="2" column="0" colspan="2">
-      <widget class="QCheckBox" name="flopFilterCheckBox">
-       <property name="text">
-        <string>Require Flop Seen</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QLabel" name="labelDatabase">
-       <property name="text">
-        <string>Database:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="3">
-      <widget class="QComboBox" name="databaseComboBox">
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QTableWidget" name="handsTable">
-     <property name="selectionMode">
-      <enum>QAbstractItemView::SingleSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="sortingEnabled">
-      <bool>true</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Date</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Hand #</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Board</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Pot</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Eff. Stack</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>IP Player</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>OOP Player</string>
-      </property>
-     </column>
+    <class>PT4ImportDialog</class>
+    <widget class="QDialog" name="PT4ImportDialog">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>800</width>
+                <height>600</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Import Hand from PokerTracker 4</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+                <layout class="QGridLayout" name="filterGridLayout">
+                    <item row="0" column="0">
+                        <widget class="QLabel" name="label">
+                            <property name="text">
+                                <string>Player Name:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="0" column="1">
+                        <widget class="QLineEdit" name="playerSearchEdit"/>
+                    </item>
+                    <item row="0" column="2">
+                        <widget class="QLabel" name="labelHandNo">
+                            <property name="text">
+                                <string>Hand #:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="0" column="3">
+                        <widget class="QLineEdit" name="handNoSearchEdit"/>
+                    </item>
+                    <item row="1" column="0">
+                        <widget class="QCheckBox" name="dateFilterCheckBox">
+                            <property name="text">
+                                <string>Filter by Date</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="1" column="1">
+                        <widget class="QDateEdit" name="startDateEdit">
+                            <property name="calendarPopup">
+                                <bool>true</bool>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="1" column="2" alignment="Qt::AlignCenter">
+                        <widget class="QLabel" name="labelTo">
+                            <property name="text">
+                                <string>to</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="1" column="3">
+                        <layout class="QHBoxLayout" name="dateSearchLayout">
+                            <item>
+                                <widget class="QDateEdit" name="endDateEdit">
+                                    <property name="calendarPopup">
+                                        <bool>true</bool>
+                                    </property>
+                                </widget>
+                            </item>
+                            <item>
+                                <widget class="QPushButton" name="searchButton">
+                                    <property name="text">
+                                        <string>Search Hands</string>
+                                    </property>
+                                </widget>
+                            </item>
+                        </layout>
+                    </item>
+                    <item row="2" column="0" colspan="2">
+                        <widget class="QCheckBox" name="flopFilterCheckBox">
+                            <property name="text">
+                                <string>Require Flop Seen</string>
+                            </property>
+                            <property name="checked">
+                                <bool>true</bool>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="2" column="2">
+                        <widget class="QLabel" name="labelDatabase">
+                            <property name="text">
+                                <string>Database:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="2" column="3">
+                        <widget class="QComboBox" name="databaseComboBox">
+                        </widget>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <widget class="QTableWidget" name="handsTable">
+                    <property name="selectionMode">
+                        <enum>QAbstractItemView::SingleSelection</enum>
+                    </property>
+                    <property name="selectionBehavior">
+                        <enum>QAbstractItemView::SelectRows</enum>
+                    </property>
+                    <property name="sortingEnabled">
+                        <bool>true</bool>
+                    </property>
+                    <column>
+                        <property name="text">
+                            <string>Date</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Hand #</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Board</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Pot</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Eff. Stack</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>IP Player</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>OOP Player</string>
+                        </property>
+                    </column>
+                </widget>
+            </item>
+            <item>
+                <layout class="QHBoxLayout" name="paginationLayout">
+                    <item>
+                        <spacer name="horizontalSpacer_pagination_left">
+                            <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                                <size>
+                                    <width>40</width>
+                                    <height>20</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="prevPageButton">
+                            <property name="text">
+                                <string>Previous Page</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QLabel" name="pageLabel">
+                            <property name="text">
+                                <string>Page 1</string>
+                            </property>
+                            <property name="alignment">
+                                <set>Qt::AlignCenter</set>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="nextPageButton">
+                            <property name="text">
+                                <string>Next Page</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <spacer name="horizontalSpacer_pagination_right">
+                            <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                                <size>
+                                    <width>40</width>
+                                    <height>20</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <item>
+                        <spacer name="horizontalSpacer">
+                            <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                                <size>
+                                    <width>40</width>
+                                    <height>20</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="copyParamsButton">
+                            <property name="text">
+                                <string>Copy Parameters</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="importButton">
+                            <property name="text">
+                                <string>Import to Postflop</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="importPreflopButton">
+                            <property name="text">
+                                <string>Import to Preflop</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPushButton" name="cancelButton">
+                            <property name="text">
+                                <string>Cancel</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </item>
+        </layout>
     </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="paginationLayout">
-     <item>
-      <spacer name="horizontalSpacer_pagination_left">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="prevPageButton">
-       <property name="text">
-        <string>Previous Page</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="pageLabel">
-       <property name="text">
-        <string>Page 1</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="nextPageButton">
-       <property name="text">
-        <string>Next Page</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_pagination_right">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="copyParamsButton">
-       <property name="text">
-        <string>Copy Parameters</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="importButton">
-       <property name="text">
-        <string>Import to Postflop</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="importPreflopButton">
-       <property name="text">
-        <string>Import to Preflop</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="cancelButton">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-  </layout>
- </widget>
- <resources/>
- <connections>
-  <connection>
-   <sender>cancelButton</sender>
-   <signal>clicked()</signal>
-   <receiver>PT4ImportDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>716</x>
-     <y>570</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+    <resources/>
+    <connections>
+        <connection>
+            <sender>cancelButton</sender>
+            <signal>clicked()</signal>
+            <receiver>PT4ImportDialog</receiver>
+            <slot>reject()</slot>
+            <hints>
+                <hint type="sourcelabel">
+                    <x>716</x>
+                    <y>570</y>
+                </hint>
+                <hint type="destinationlabel">
+                    <x>399</x>
+                    <y>299</y>
+                </hint>
+            </hints>
+        </connection>
+    </connections>
 </ui>

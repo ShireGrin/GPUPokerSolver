@@ -147,139 +147,139 @@ void HipPCfrSolver::buildGpuStates() {
             BFSNode current = q.front();
             q.pop();
 
-        auto node = current.node;
-        int my_idx = current.my_state_idx;
+            auto node = current.node;
+            int my_idx = current.my_state_idx;
 
-        GpuState state;
-        int node_type = (int)node->getType();
-        int player = -1;
-        int action_count = 0;
-        int turn_card = -1;
-        int river_card = -1;
-        state.deal_id = current.deal_id;
-        state.parent_idx = current.parent_idx;
-        state.action_idx_in_parent = current.action_idx;
-        state.trainable_offset = -1;
-        state.range_size = 0;
-        state.pot = (float)node->getPot();
-        state.child_start_idx = -1;
-
-        int card_num = deck.getCards().size();
-        if (current.deal_id > 0 && current.deal_id <= card_num) {
-            int turn_card_idx = current.deal_id - 1;
-            turn_card = deck.getCards()[turn_card_idx].getCardInt();
-        } else if (current.deal_id > card_num) {
-            int c_deal = current.deal_id - (1 + card_num);
-            int turn_card_idx = c_deal / card_num;
-            int river_card_idx = c_deal % card_num;
-            turn_card = deck.getCards()[turn_card_idx].getCardInt();
-            river_card = deck.getCards()[river_card_idx].getCardInt();
-        }
-        turn_card = turn_card;
-        river_card = river_card;
-
-        if (node->getType() == GameTreeNode::ACTION) {
-            auto action_node = std::dynamic_pointer_cast<ActionNode>(node);
-            player = action_node->getPlayer();
-            action_count = action_node->getChildrens().size();
-            state.range_size = ranges[player].size();
-
-            state.trainable_offset = total_trainable_size;
-            total_trainable_size += action_count * state.range_size;
-
-            action_state_map[{action_node.get(), current.deal_id}] = my_idx;
-
-            auto& children = action_node->getChildrens();
-            if (!children.empty()) {
-                state.child_start_idx = h_states.size(); // Next slots reserved for children
-                for (size_t i = 0; i < children.size(); ++i) {
-                    int child_idx = h_states.size();
-                    h_states.push_back(GpuState()); // Reserve contiguous space
-                    q.push({children[i], current.deal_id, my_idx, (int)i, child_idx});
-                }
-            }
-        } else if (node->getType() == GameTreeNode::CHANCE) {
-            auto chance_node = std::dynamic_pointer_cast<ChanceNode>(node);
-            auto& chance_cards = chance_node->getCards();
-            auto child = chance_node->getChildren();
+            GpuState state;
+            int node_type = (int)node->getType();
+            int player = -1;
+            int action_count = 0;
+            int turn_card = -1;
+            int river_card = -1;
+            state.deal_id = current.deal_id;
+            state.parent_idx = current.parent_idx;
+            state.action_idx_in_parent = current.action_idx;
+            state.trainable_offset = -1;
+            state.range_size = 0;
+            state.pot = (float)node->getPot();
+            state.child_start_idx = -1;
 
             int card_num = deck.getCards().size();
+            if (current.deal_id > 0 && current.deal_id <= card_num) {
+                int turn_card_idx = current.deal_id - 1;
+                turn_card = deck.getCards()[turn_card_idx].getCardInt();
+            } else if (current.deal_id > card_num) {
+                int c_deal = current.deal_id - (1 + card_num);
+                int turn_card_idx = c_deal / card_num;
+                int river_card_idx = c_deal % card_num;
+                turn_card = deck.getCards()[turn_card_idx].getCardInt();
+                river_card = deck.getCards()[river_card_idx].getCardInt();
+            }
+            turn_card = turn_card;
+            river_card = river_card;
 
-            std::vector<std::pair<int, int>> valid_children; // <card_idx, new_deal_id>
+            if (node->getType() == GameTreeNode::ACTION) {
+                auto action_node = std::dynamic_pointer_cast<ActionNode>(node);
+                player = action_node->getPlayer();
+                action_count = action_node->getChildrens().size();
+                state.range_size = ranges[player].size();
 
-            for (size_t c = 0; c < chance_cards.size(); ++c) {
-                Card card = chance_cards[c];
-                uint64_t card_long = Card::boardInt2long(card.getCardInt());
+                state.trainable_offset = total_trainable_size;
+                total_trainable_size += action_count * state.range_size;
 
-                uint64_t parent_board_long = initial_board_long;
-                if (current.deal_id > 0 && current.deal_id <= card_num) {
-                    // Turn to River: Walk up to find the parent ChanceNode that dealt the Turn card
-                    std::shared_ptr<ChanceNode> parent_chance = nullptr;
-                    auto p = current.node->getParent();
-                    while (p) {
-                        parent_chance = std::dynamic_pointer_cast<ChanceNode>(p);
-                        if (parent_chance) break;
-                        p = p->getParent();
+                action_state_map[{action_node.get(), current.deal_id}] = my_idx;
+
+                auto& children = action_node->getChildrens();
+                if (!children.empty()) {
+                    state.child_start_idx = h_states.size(); // Next slots reserved for children
+                    for (size_t i = 0; i < children.size(); ++i) {
+                        int child_idx = h_states.size();
+                        h_states.push_back(GpuState()); // Reserve contiguous space
+                        q.push({children[i], current.deal_id, my_idx, (int)i, child_idx});
                     }
-                    if (!parent_chance) {
-                        throw std::runtime_error("Could not find Turn ChanceNode parent!");
+                }
+            } else if (node->getType() == GameTreeNode::CHANCE) {
+                auto chance_node = std::dynamic_pointer_cast<ChanceNode>(node);
+                auto& chance_cards = chance_node->getCards();
+                auto child = chance_node->getChildren();
+
+                int card_num = deck.getCards().size();
+
+                std::vector<std::pair<int, int>> valid_children; // <card_idx, new_deal_id>
+
+                for (size_t c = 0; c < chance_cards.size(); ++c) {
+                    Card card = chance_cards[c];
+                    uint64_t card_long = Card::boardInt2long(card.getCardInt());
+
+                    uint64_t parent_board_long = initial_board_long;
+                    if (current.deal_id > 0 && current.deal_id <= card_num) {
+                        // Turn to River: Walk up to find the parent ChanceNode that dealt the Turn card
+                        std::shared_ptr<ChanceNode> parent_chance = nullptr;
+                        auto p = current.node->getParent();
+                        while (p) {
+                            parent_chance = std::dynamic_pointer_cast<ChanceNode>(p);
+                            if (parent_chance) break;
+                            p = p->getParent();
+                        }
+                        if (!parent_chance) {
+                            throw std::runtime_error("Could not find Turn ChanceNode parent!");
+                        }
+                        int turn_c = current.deal_id - 1;
+                        Card turn_card = parent_chance->getCards()[turn_c];
+                        parent_board_long |= Card::boardInt2long(turn_card.getCardInt());
                     }
-                    int turn_c = current.deal_id - 1;
-                    Card turn_card = parent_chance->getCards()[turn_c];
-                    parent_board_long |= Card::boardInt2long(turn_card.getCardInt());
+
+                    if (Card::boardsHasIntercept(card_long, parent_board_long)) continue;
+
+                    int new_deal_id = 0;
+                    if (current.deal_id == 0) {
+                        new_deal_id = c + 1;
+                    } else if (current.deal_id > 0 && current.deal_id <= card_num) {
+                        int turn_card_idx = current.deal_id - 1;
+                        new_deal_id = card_num * turn_card_idx + c + (1 + card_num);
+                    } else {
+                        throw std::runtime_error("deal_id out of range in buildGpuStates");
+                    }
+                    valid_children.push_back({c, new_deal_id});
                 }
 
-                if (Card::boardsHasIntercept(card_long, parent_board_long)) continue;
+                action_count = valid_children.size(); // Pass exact valid child count to GPU
 
-                int new_deal_id = 0;
-                if (current.deal_id == 0) {
-                    new_deal_id = c + 1;
-                } else if (current.deal_id > 0 && current.deal_id <= card_num) {
-                    int turn_card_idx = current.deal_id - 1;
-                    new_deal_id = card_num * turn_card_idx + c + (1 + card_num);
+                if (!valid_children.empty()) {
+                    state.child_start_idx = h_states.size();
+                    for (size_t i = 0; i < valid_children.size(); ++i) {
+                        int child_idx = h_states.size();
+                        h_states.push_back(GpuState());
+                        q.push({child, valid_children[i].second, my_idx, (int)i, child_idx});
+                    }
+                }
+            } else if (node->getType() == GameTreeNode::TERMINAL) {
+                auto terminal_node = std::dynamic_pointer_cast<TerminalNode>(node);
+                auto payoffs = terminal_node->get_payoffs();
+                if (payoffs[0] < 0) {
+                    player = 0; // Player 0 folded
+                    state.pot = (float)-payoffs[0];
                 } else {
-                    throw std::runtime_error("deal_id out of range in buildGpuStates");
-                }
-                valid_children.push_back({c, new_deal_id});
-            }
-
-            action_count = valid_children.size(); // Pass exact valid child count to GPU
-
-            if (!valid_children.empty()) {
-                state.child_start_idx = h_states.size();
-                for (size_t i = 0; i < valid_children.size(); ++i) {
-                    int child_idx = h_states.size();
-                    h_states.push_back(GpuState());
-                    q.push({child, valid_children[i].second, my_idx, (int)i, child_idx});
+                    player = 1; // Player 1 folded
+                    state.pot = (float)-payoffs[1];
                 }
             }
-        } else if (node->getType() == GameTreeNode::TERMINAL) {
-            auto terminal_node = std::dynamic_pointer_cast<TerminalNode>(node);
-            auto payoffs = terminal_node->get_payoffs();
-            if (payoffs[0] < 0) {
-                player = 0; // Player 0 folded
-                state.pot = (float)-payoffs[0];
-            } else {
-                player = 1; // Player 1 folded
-                state.pot = (float)-payoffs[1];
+
+            if (node_type == (int)GameTreeNode::TERMINAL || node_type == (int)GameTreeNode::SHOWDOWN) {
+                state.child_start_idx = this->total_leaf_nodes++;
             }
-        }
-
-        if (node_type == (int)GameTreeNode::TERMINAL || node_type == (int)GameTreeNode::SHOWDOWN) {
-            state.child_start_idx = this->total_leaf_nodes++;
-        }
 
 
-        uint32_t packed = 0;
-        packed |= (node_type & 0x3);
-        packed |= ((player + 1) & 0x3) << 2;
-        packed |= (action_count & 0xFF) << 4;
-        packed |= ((turn_card == -1 ? 127 : turn_card) & 0x7F) << 12;
-        packed |= ((river_card == -1 ? 127 : river_card) & 0x7F) << 19;
-        state.packed = packed;
-        
-        // Save the fully configured state into its reserved slot
-        h_states[my_idx] = state;
+            uint32_t packed = 0;
+            packed |= (node_type & 0x3);
+            packed |= ((player + 1) & 0x3) << 2;
+            packed |= (action_count & 0xFF) << 4;
+            packed |= ((turn_card == -1 ? 127 : turn_card) & 0x7F) << 12;
+            packed |= ((river_card == -1 ? 127 : river_card) & 0x7F) << 19;
+            state.packed = packed;
+            
+            // Save the fully configured state into its reserved slot
+            h_states[my_idx] = state;
         } // end for loop over level elements
     }
     num_levels = h_levels.size();
