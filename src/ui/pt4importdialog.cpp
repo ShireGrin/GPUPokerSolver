@@ -21,6 +21,8 @@
 #include <QSet>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QApplication>
+#include <QClipboard>
 
 PT4ImportDialog::PT4ImportDialog(QWidget *parent) :
     QDialog(parent),
@@ -755,8 +757,6 @@ void PT4ImportDialog::on_importButton_clicked()
     accept();
 }
 
-#include <QApplication>
-#include <QClipboard>
 
 void PT4ImportDialog::on_copyParamsButton_clicked()
 {

@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QVariant>
 #include <iostream>
+#include <QSqlQueryModel>
 
 DBManager::DBManager() :
     m_host(qEnvironmentVariable("DB_SOLVER_HOST", "localhost")),
@@ -65,18 +66,18 @@ bool DBManager::init() {
         "CREATE TABLE IF NOT EXISTS cluster_ranges (id SERIAL PRIMARY KEY, id_cluster INT NOT NULL REFERENCES profile_clusters(id_cluster) ON DELETE CASCADE, id_position INT NOT NULL REFERENCES positions(id_position), id_scenario INT NOT NULL REFERENCES action_scenarios(id_scenario), id_stack_cluster INT NOT NULL REFERENCES stack_clusters(id_stack_cluster), range_text TEXT NOT NULL, UNIQUE(id_cluster, id_position, id_scenario, id_stack_cluster))",
         "CREATE TABLE IF NOT EXISTS training_samples (id SERIAL PRIMARY KEY, board_text VARCHAR(15), oop_range_text TEXT, ip_range_text TEXT, board_card0 SMALLINT, board_card1 SMALLINT, board_card2 SMALLINT, pot REAL NOT NULL, effective_stack REAL NOT NULL, spr REAL NOT NULL, oop_range REAL[], ip_range REAL[], oop_evs REAL[], ip_evs REAL[], exploitability REAL, status VARCHAR(20) DEFAULT 'pending', solve_duration_sec REAL, id_cluster_oop INT REFERENCES profile_clusters(id_cluster), id_cluster_ip INT REFERENCES profile_clusters(id_cluster), id_position_oop INT REFERENCES positions(id_position), id_position_ip INT REFERENCES positions(id_position), id_scenario INT REFERENCES action_scenarios(id_scenario), id_stack_cluster INT REFERENCES stack_clusters(id_stack_cluster), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
     };
-    
+
     for (const QString& queryStr : tables) {
         if (!q.exec(queryStr)) {
             qWarning() << "Failed to create table:" << q.lastError().text() << "Query:" << queryStr;
         }
     }
-    
+
     // Non-destructive additions for node locking and lineage
     q.exec("ALTER TABLE solves ADD COLUMN IF NOT EXISTS is_node_locked BOOLEAN DEFAULT FALSE");
     q.exec("ALTER TABLE solves ADD COLUMN IF NOT EXISTS parent_id_solve INTEGER DEFAULT NULL");
     q.exec("ALTER TABLE solves ADD COLUMN IF NOT EXISTS size_bytes BIGINT DEFAULT 0");
-    
+
     // Chunking to avoid 1GB bytea output limit in Postgres
     q.exec("ALTER TABLE solves DROP COLUMN IF EXISTS strategy_blob");
     q.exec("CREATE TABLE IF NOT EXISTS solve_chunks (id_solve INT REFERENCES solves(id_solve) ON DELETE CASCADE, chunk_idx INT, chunk_data BYTEA, PRIMARY KEY(id_solve, chunk_idx))");
@@ -218,7 +219,7 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
 
     QJsonObject root = doc.object();
     QJsonObject profiles = root["profiles"].toObject();
-    
+
     QSqlDatabase d = db();
     if (!d.isOpen()) return false;
 
@@ -231,18 +232,18 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
         QString clusterKey = it.key();
         QJsonObject clusterData = it.value().toObject();
         QString profileName = clusterData["profile_name"].toString();
-        
+
         QJsonObject stats = clusterData["stats"].toObject();
         double vpip = stats["VPIP"].toDouble();
         double pfr = stats["PFR"].toDouble();
         double threebet = stats["3Bet"].toDouble();
         double af = stats["AF"].toDouble();
         double wtsd = stats["WTSD"].toDouble();
-        
+
         QJsonObject ranges = clusterData["ranges"].toObject();
         QJsonDocument rangesDoc(ranges);
         QString rangesJson = QString::fromUtf8(rangesDoc.toJson(QJsonDocument::Compact));
-        
+
         // Remove betting keys to store separately in betting_profiles_json
         QJsonObject betting;
         for (const QString& k : clusterData.keys()) {
@@ -258,7 +259,7 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
                   "ON CONFLICT (cluster_name) DO UPDATE SET "
                   "vpip_mean = EXCLUDED.vpip_mean, pfr_mean = EXCLUDED.pfr_mean, threebet_mean = EXCLUDED.threebet_mean, "
                   "af_mean = EXCLUDED.af_mean, wtsd_mean = EXCLUDED.wtsd_mean, ranges_json = EXCLUDED.ranges_json, betting_profiles_json = EXCLUDED.betting_profiles_json");
-        
+
         q.bindValue(":name", profileName);
         q.bindValue(":vpip", vpip);
         q.bindValue(":pfr", pfr);
@@ -267,7 +268,7 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
         q.bindValue(":wtsd", wtsd);
         q.bindValue(":ranges", rangesJson);
         q.bindValue(":betting", bettingJson);
-        
+
         if (!q.exec()) {
             qWarning() << "Failed to insert cluster:" << q.lastError().text();
             d.rollback();
@@ -280,11 +281,11 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
     for (auto it = mappings.begin(); it != mappings.end(); ++it) {
         QString playerName = it.key();
         QString profileName = it.value().toString();
-        
+
         // First get or create player (we'll assume default site_id = 1 for now)
         int siteId = getOrCreateSite("PokerStars"); // default fallback site
         int playerId = getOrCreatePlayer(siteId, playerName);
-        
+
         if (playerId < 0) continue;
 
         // Find cluster ID
@@ -303,7 +304,7 @@ bool DBManager::loadProfilesFromJson(const QString& jsonFilePath) {
                   "id_cluster = EXCLUDED.id_cluster");
         q.bindValue(":pid", playerId);
         q.bindValue(":cid", clusterId);
-        
+
         if (!q.exec()) {
             qWarning() << "Failed to insert player profile mapping:" << q.lastError().text();
             d.rollback();
@@ -330,13 +331,13 @@ QJsonObject DBManager::getProfileForPlayer(int playerId, double stackBb, double 
     q.bindValue(":pid", playerId);
     q.bindValue(":stack", stackBb);
     q.bindValue(":blind", blindLevel);
-    
+
     if (q.exec() && q.next()) {
         result.insert("profile_name", q.value(0).toString());
-        
+
         QJsonDocument rangesDoc = QJsonDocument::fromJson(q.value(1).toString().toUtf8());
         result.insert("ranges", rangesDoc.object());
-        
+
         QJsonDocument bettingDoc = QJsonDocument::fromJson(q.value(2).toString().toUtf8());
         QJsonObject bettingObj = bettingDoc.object();
         for (const QString& key : bettingObj.keys()) {
@@ -568,8 +569,6 @@ bool DBManager::deleteSolve(int solveId) {
     qWarning() << "Failed to delete solve. Error:" << q.lastError().text();
     return false;
 }
-
-#include <QSqlQueryModel>
 
 QSqlQueryModel* DBManager::getSolvesModel(QObject* parent) {
     QSqlDatabase d = db();
