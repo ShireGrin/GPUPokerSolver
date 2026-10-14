@@ -7,7 +7,8 @@
 
 ## 📺 Video Demo
 
-VIDEO
+[![Watch the video](https://img.youtube.com/vi/dMPz76tenyc/maxresdefault.jpg)](https://youtu.be/dMPz76tenyc)
+
 
 ## 🚀 Introduction 
 This is a massively upgraded, heavily refactored, and hardware-accelerated fork of the original open-source [TexasSolver](https://github.com/bupticybee/TexasSolver). 
