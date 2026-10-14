@@ -137,3 +137,7 @@ Neural Networks: PyTorch / LibTorch.
 GPU Backend: AMD ROCm and NVIDIA CUDA Toolkits.
 
 If you integrate the code of this solver into your software or provide services through the internet, you must comply with the AGPL-v3 license terms.
+
+## Community
+
+Please feel free to make issues if something doesn't work for you that needs fixing or let me know with screenshots what is wrong please.
