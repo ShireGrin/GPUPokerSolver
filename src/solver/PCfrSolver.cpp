@@ -8,6 +8,9 @@
 #include <QObject>
 #include <QTranslator>
 #include "include/tools/dbmanager.h"
+#include <zlib.h>
+#include <stdexcept>
+#include <cstring>
 
 //#define DEBUG;
 
@@ -1389,10 +1392,6 @@ shared_ptr<Trainable> PCfrSolver::get_trainable(const shared_ptr<ActionNode>& no
     }
     return node->getTrainable(deal, true, this->use_halffloats);
 }
-
-#include <zlib.h>
-#include <stdexcept>
-#include <cstring>
 
 static void save_node_binary(gzFile file, const shared_ptr<GameTreeNode>& node) {
     if (!node) return;

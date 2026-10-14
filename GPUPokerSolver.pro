@@ -22,90 +22,85 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-TRANSLATIONS =  src/lang_cn.ts\
-                src/lang_en.ts
+TRANSLATIONS =  src/lang_cn.ts src/lang_en.ts
 
 
-macx: {
-QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -lomp -I/usr/local/include
+macx {
+    BREW_PREFIX = $$system(brew --prefix)
+
+    QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -I$${BREW_PREFIX}/include
+    QMAKE_LFLAGS += -lomp
+
+    LIBS += -L$${BREW_PREFIX}/lib -lomp -lz
+    ICON = imgs/texassolver_logo.icns
 }
 
-macx: {
-QMAKE_LFLAGS += -lomp
+win32 {
+    QMAKE_CXXFLAGS+= -openmp
+    QMAKE_LFLAGS +=  -openmp
+    RC_ICONS = imgs/texassolver_logo.ico
+
+    # You will need to provide the actual paths to zlib on your Windows machine
+    # INCLUDEPATH += C:/path/to/zlib/include
+    # LIBS += -LC:/path/to/zlib/lib -lzlibstatic
 }
 
-macx: {
-LIBS += -L /usr/local/lib /usr/local/lib/libomp.dylib
-ICON = imgs/texassolver_logo.icns
-}
-
-win32: {
-QMAKE_CXXFLAGS+= -openmp
-QMAKE_LFLAGS +=  -openmp
-RC_ICONS = imgs/texassolver_logo.ico
-}
-
-win64: {
-QMAKE_CXXFLAGS+= -openmp
-QMAKE_LFLAGS +=  -openmp
-RC_ICONS = imgs/texassolver_logo.ico
-}
-
-linux: {
-QMAKE_CXXFLAGS += -fopenmp
-QMAKE_LFLAGS += -fopenmp
- 
+linux {
+    QMAKE_CXXFLAGS += -fopenmp
+    QMAKE_LFLAGS += -fopenmp
+    LIBS += -lz
+     
 # Explicitly check for the new official AMD ROCm compiler
-system(test -f /opt/rocm/bin/hipcc) {
-    message("Official AMD ROCm compiler found: enabling HIP C++ GPU Solver")
-    DEFINES += USE_GPU_HIP
-    
-    # Define HIP compiler rule for qmake
-    hipcc_compiler.name = HIP Compiler
-    hipcc_compiler.input = HIP_SOURCES
-    hipcc_compiler.dependency_type = TYPE_C
-    hipcc_compiler.variable_out = OBJECTS
-    hipcc_compiler.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
-    
-    hipcc_compiler.commands = /opt/rocm/bin/hipcc -c --offload-arch=native -O3 -isystem /opt/rocm/include -DUSE_GPU_HIP -D__HIP_PLATFORM_AMD__ -I$$PWD -I$$PWD/include ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-    QMAKE_EXTRA_COMPILERS += hipcc_compiler
-    
-    # Link with AMD HIP runtime library
-    LIBS += -L/opt/rocm/lib -lamdhip64
-    
-    # Include HIP source files
-    HIP_SOURCES += src/solver/HipKernels.hip
-    SOURCES += src/solver/HipPCfrSolver.cpp
-    HEADERS += include/solver/HipPCfrSolver.h
-}
+    system(test -f /opt/rocm/bin/hipcc) {
+        message("Official AMD ROCm compiler found: enabling HIP C++ GPU Solver")
+        DEFINES += USE_GPU_HIP
+        
+        # Define HIP compiler rule for qmake
+        hipcc_compiler.name = HIP Compiler
+        hipcc_compiler.input = HIP_SOURCES
+        hipcc_compiler.dependency_type = TYPE_C
+        hipcc_compiler.variable_out = OBJECTS
+        hipcc_compiler.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
+        
+        hipcc_compiler.commands = /opt/rocm/bin/hipcc -c --offload-arch=native -O3 -isystem /opt/rocm/include -DUSE_GPU_HIP -D__HIP_PLATFORM_AMD__ -I$$PWD -I$$PWD/include ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
+        QMAKE_EXTRA_COMPILERS += hipcc_compiler
+        
+        # Link with AMD HIP runtime library
+        LIBS += -L/opt/rocm/lib -lamdhip64
+        
+        # Include HIP source files
+        HIP_SOURCES += src/solver/HipKernels.hip
+        SOURCES += src/solver/HipPCfrSolver.cpp
+        HEADERS += include/solver/HipPCfrSolver.h
+    }
 
 # Explicitly check for NVIDIA CUDA compiler
-system(which nvcc > /dev/null 2>&1) {
-    message("NVIDIA CUDA compiler found: enabling CUDA GPU Solver")
-    DEFINES += USE_GPU_CUDA
-    
-    # Run the generator script to ensure CUDA files are present
-    system(python3 $$PWD/scripts/generate_cuda.py)
+    system(which nvcc > /dev/null 2>&1) {
+        message("NVIDIA CUDA compiler found: enabling CUDA GPU Solver")
+        DEFINES += USE_GPU_CUDA
+        
+        # Run the generator script to ensure CUDA files are present
+        system(python3 $$PWD/scripts/generate_cuda.py)
 
-    # Define NVCC compiler rule for qmake
-    nvcc_compiler.name = NVCC Compiler
-    nvcc_compiler.input = CUDA_SOURCES
-    nvcc_compiler.dependency_type = TYPE_C
-    nvcc_compiler.variable_out = OBJECTS
-    nvcc_compiler.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
-    
-    nvcc_compiler.commands = nvcc -c -O3 -arch=sm_86 -std=c++14 -DUSE_GPU_CUDA -D__HIP_PLATFORM_NVIDIA__ -I$$PWD -I$$PWD/include ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
-    QMAKE_EXTRA_COMPILERS += nvcc_compiler
-    
-    # Link with CUDA runtime
-    LIBS += -L/usr/local/cuda/lib64 -lcudart
-    INCLUDEPATH += /usr/local/cuda/include /opt/cuda/include
-    
-    # Include CUDA source files
-    CUDA_SOURCES += src/solver/CudaKernels.cu
-    SOURCES += src/solver/CudaPCfrSolver.cpp
-    HEADERS += include/solver/CudaPCfrSolver.h
-}
+        # Define NVCC compiler rule for qmake
+        nvcc_compiler.name = NVCC Compiler
+        nvcc_compiler.input = CUDA_SOURCES
+        nvcc_compiler.dependency_type = TYPE_C
+        nvcc_compiler.variable_out = OBJECTS
+        nvcc_compiler.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
+        
+        nvcc_compiler.commands = nvcc -c -O3 -arch=sm_86 -std=c++14 -DUSE_GPU_CUDA -D__HIP_PLATFORM_NVIDIA__ -I$$PWD -I$$PWD/include ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
+        QMAKE_EXTRA_COMPILERS += nvcc_compiler
+        
+        # Link with CUDA runtime
+        LIBS += -L/usr/local/cuda/lib64 -lcudart
+        INCLUDEPATH += /usr/local/cuda/include /opt/cuda/include
+        
+        # Include CUDA source files
+        CUDA_SOURCES += src/solver/CudaKernels.cu
+        SOURCES += src/solver/CudaPCfrSolver.cpp
+        HEADERS += include/solver/CudaPCfrSolver.h
+    }
 }
 
 QMAKE_CXXFLAGS_RELEASE *= -O2
@@ -290,7 +285,6 @@ RESOURCES += \
     src/translations.qrc \
     src/compairer.qrc
 
-LIBS += -lz
 
 # ============================================================
 # Neural Network support via LibTorch (optional)

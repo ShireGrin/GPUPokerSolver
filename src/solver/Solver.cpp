@@ -3,6 +3,8 @@
 //
 
 #include "include/solver/Solver.h"
+#include <zlib.h>
+#include <stdexcept>
 
 Solver::Solver() {
 
@@ -16,8 +18,6 @@ shared_ptr<GameTree> Solver::getTree() {
     return this->tree;
 }
 
-#include <zlib.h>
-#include <stdexcept>
 
 bool Solver::read_config_from_file(const string& filepath, string& config_str, string& metadata_str) {
     gzFile file = gzopen(filepath.c_str(), "rb");

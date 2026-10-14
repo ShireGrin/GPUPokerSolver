@@ -24,6 +24,10 @@
 #include "include/tools/dbmanager.h"
 #include <QInputDialog>
 #include <QDateTime>
+#include <zlib.h>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include "include/ui/handhistoryparser.h"
 
 QSTextEdit* MainWindow::s_textEdit = 0;
 
@@ -672,10 +676,6 @@ void MainWindow::on_buttonSolve_clicked()
     openStrategyExplorer(true);
 }
 
-#include <zlib.h>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include "include/ui/handhistoryparser.h"
 
 Ui::MainWindow * MainWindow::getPriUi(){
     return this->ui;

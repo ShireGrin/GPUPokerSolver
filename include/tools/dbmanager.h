@@ -52,10 +52,10 @@ class DBManager {
 
         // Neural Network Training Data
         bool updateTrainingSample(
-            int row_id, const std::vector<float>& oop_range,
-            const std::vector<float>& ip_range, const std::vector<float>& oop_evs
-            const std::vector<float>& ip_evs, float exploitability,
-            float solve_duration_sec
+                int row_id,
+                const std::vector<float>& oop_range, const std::vector<float>& ip_range,
+                const std::vector<float>& oop_evs, const std::vector<float>& ip_evs,
+                float exploitability, float solve_duration_sec
         );
 
         // Saved Parameters
