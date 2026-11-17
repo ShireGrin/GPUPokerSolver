@@ -62,6 +62,7 @@ linux {
         hipcc_compiler.variable_out = OBJECTS
         hipcc_compiler.output = $$OUT_PWD/${QMAKE_FILE_BASE}.o
         
+        hipcc_compiler.depends = $$PWD/include/solver/HipSymbols.h $$PWD/include/solver/GpuTypes.h
         hipcc_compiler.commands = /opt/rocm/bin/hipcc -c --offload-arch=native -O3 -isystem /opt/rocm/include -DUSE_GPU_HIP -D__HIP_PLATFORM_AMD__ -I$$PWD -I$$PWD/include ${QMAKE_FILE_IN} -o ${QMAKE_FILE_OUT}
         QMAKE_EXTRA_COMPILERS += hipcc_compiler
         
@@ -72,6 +73,7 @@ linux {
         HIP_SOURCES += src/solver/HipKernels.hip
         SOURCES += src/solver/HipPCfrSolver.cpp
         HEADERS += include/solver/HipPCfrSolver.h
+        HEADERS += include/solver/HipSymbols.h
     }
 
 # Explicitly check for NVIDIA CUDA compiler
@@ -201,6 +203,7 @@ HEADERS += \
     include/solver/Solver.h \
     include/solver/BestResponse.h \
     include/solver/CfrSolver.h \
+    include/solver/GpuTypes.h \
     include/tools/argparse.hpp \
     include/tools/CommandLineTool.h \
     include/tools/utils.h \
