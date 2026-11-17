@@ -2,7 +2,7 @@
 
 Analysis only. No solver code is changed by this note. It describes the AMD HIP postflop solver as it exists today, what actually fills a 16 GB card, and an opt-in way to use two Radeon RX 9060 XT cards without changing the single-GPU path.
 
-The two cards are identical gfx1200 parts (RDNA4, 16 GB GDDR6, consumer PCIe, no Infinity Fabric / xGMI between them). `hipcc` reporting HIP 5.7 / clang 17 cannot target that GPU. That is a hard prerequisite and is covered in [Build and toolchain](#build-and-toolchain).
+The two cards are identical gfx1200 parts (RDNA4, 16 GB GDDR6, consumer PCIe, no Infinity Fabric / xGMI between them). The solver already runs on that GPU. `run.sh` prepends `/opt/rocm/lib` and starts `build/GPUPokerSolver`, and the training worker uses `/opt/rocm/core-7.13/lib`. A shell whose `hipcc --version` prints HIP 5.7 / clang 17 is not the compiler this build uses. Details are in [Build and toolchain](#build-and-toolchain).
 
 Numbers below come from the allocation formulas in `HipPCfrSolver::allocateDeviceMemory` and `printExpectedVramUsage`. They are not measurements from a 9060 XT. The log line `ESTIMATED TOTAL DEMAND` is the right thing to compare them against on the real machine.
 
@@ -10,9 +10,12 @@ Numbers below come from the allocation formulas in `HipPCfrSolver::allocateDevic
 
 The GPU solver unrolls every turn and river card into its own copy of the betting tree, then keeps every copy's regrets and every leaf's counterfactual values resident for the whole solve. On a flop solve that product is about 49 × 48 = 2352 copies of the river tree. A 25bb tree with a few hundred combos fits in 16 GB. A deeper stack or a wider range multiplies the same arrays until it does not. Two cards, split by turn card, hold about twice that bulk. They do not turn an exponential betting tree into a 200bb full-range flop solve.
 
-The single-GPU path should stay the default. The dual-GPU path should be a separate coordinator that runs the existing kernels on each card's own states and exchanges one reach vector and one utility vector per chance child per iteration. That exchange is megabytes to a few hundred megabytes. The showdown work and the leaf buffer are gigabytes. Host-staged copies over PCIe are enough. Peer-to-peer is optional and often unavailable on these cards.
+Leave the CFR update, the fp16 path, and the kernels alone for the first multi-GPU cut. Two ways to use the second card, in that order:
 
-Before any of that is worth running, two bugs have to be fixed on the single-GPU path: fp16 mode currently reads float reach and utility buffers as half floats, and the trainable-size counters are 32-bit ints that wrap at the same size as a full 16 GB card.
+1. **Two processes, no data shared.** `scripts/run_solver_worker.py` already takes one training job at a time. Start a second copy with `HIP_VISIBLE_DEVICES=1`. Each solve is the current solver on one card. Nothing is transferred. A single pot is still limited to 16 GB. Throughput doubles. This is the change to make first.
+2. **One larger solve.** Split turn cards (flop) or river cards (turn) across the cards and run the same kernels on each shard. The only values that cross PCIe each iteration are the reach vector going down at a chance node and the utility vector coming back up. Regrets and the average strategy stay on the GPU that owns that card. There is no neural-net activation vector in this loop. See [What crosses the bus](#what-crosses-the-bus).
+
+The fp16 template bug and the 32-bit size counters are real. They are separate from adding a second GPU, and they change numerical behavior, so they stay out of the first cut.
 
 ---
 
@@ -278,6 +281,25 @@ A machine with 64 GB of RAM can die in `train()` after VRAM allocation succeeded
 
 ## 3. Dual-GPU options
 
+### What crosses the bus
+
+There is no activation vector in `HipPCfrSolver`. The neural-net value head in `implementation_plan_nn_pipeline.md` is a different pipeline and is not on this iteration. The GPU CFR loop moves two plain float vectors, one entry per combo, and only at a chance node (the turn or river card). Action nodes never send anything to the other card.
+
+Picture one flop decision that ends in a check-check or a call, so the next node is "deal the turn". Both players have a reach vector: `n0` floats for IP, `n1` floats for OOP, stored back to back. That vector is "how much weight each combo still has, given the strategies played to get here". The forward kernel multiplies it by `1/(valid_cards - 2)` and writes a zero for any combo that contains the turn card. Each turn card therefore has its own reach vector of length `R = n0 + n1`.
+
+That is the downward transfer. GPU 0 computes it, because the flop trunk lives there. The rows for GPU 1's turn cards are copied across. GPU 1 then runs the normal forward/backward kernels on those turn-plus-river subtrees. Every regret update under those cards stays on GPU 1. No strategy vector and no regret vector moves.
+
+At the end of that subtree, each turn card has a utility vector, also length `R`: "for each combo, the counterfactual value of this whole turn and river". Those rows are copied back. GPU 0 adds them, in card order, into the chance node and finishes the flop backward pass, including the flop regret update. The chance scale stays `1/(all valid cards - 2)`, including cards that live on the other GPU. Summing only the local cards would halve the flop values.
+
+So the "activation" people remember from a network is, here, just those two vectors:
+
+| Direction | What | Length | When |
+| --- | --- | --- | --- |
+| Down | Reach. Weight of each combo on this card. | `R` floats per chance child | Once per iteration, at the street boundary |
+| Up | Utility. Counterfactual value of each combo for that card's subtree. | `R` floats per chance child | Once per iteration, same boundary |
+
+Bytes are `N_chance * cards_on_the_other_gpu * R * 4` each way. A few hundred chance nodes, 25 remote cards, and 2000 combos is about 40–400 MB. That is the whole exchange. `run.sh` sets `HSA_ENABLE_SDMA=0`, which turns off the SDMA copy engine and is already part of the working launch. Keep it. Host-staged copies still work with SDMA off. Do not flip that variable on in order to chase peer-to-peer.
+
 ### What the hardware allows
 
 - Two devices, `hipSetDevice(0)` and `hipSetDevice(1)`, each with its own streams and its own HIP graph. A graph captured on device 0 cannot launch kernels on device 1.
@@ -348,7 +370,18 @@ PCIe cost is `2 * (that shard's regret pair + that shard's leaves)` per shard pe
 
 ### Recommendation
 
-Build option A. Keep option C's host path as the default transport and P2P as a probed upgrade. Leave option B unused. Treat option D as a later backend of the same shard list, not as a separate project.
+Do not change the regret update, the strategy accumulation, fp16, or isomorphism as part of turning the second GPU on. Those are later, and they change the strategy the solver produces.
+
+First, run two workers. Same binary, same `run.sh` environment (`LD_LIBRARY_PATH=/opt/rocm/lib`, `HSA_ENABLE_SDMA=0`), one job each:
+
+```
+HIP_VISIBLE_DEVICES=0 python3 scripts/run_solver_worker.py
+HIP_VISIBLE_DEVICES=1 python3 scripts/run_solver_worker.py
+```
+
+`run_solver_worker.py` already locks a pending row with `FOR UPDATE SKIP LOCKED`, so the two processes will not take the same job. No vector is transferred. This does not make one pot larger than 16 GB.
+
+When a single pot has to be larger than one card, build option A and nothing else. Same kernels, same DCFR coefficients, same lock behavior. The only new traffic is the reach vector down and the utility vector up from [What crosses the bus](#what-crosses-the-bus). Host-staged copies are the transport. Probe peer-to-peer (option C) later, and leave `HSA_ENABLE_SDMA=0` in place. Leave the hand split (option B) unused. Streaming from host RAM (option D) is a later backend of the same card split, not a second design.
 
 Expected result on this box: flop and turn solves up to roughly 1.8× the bytes that fit on the fuller of the two cards (the display card will be a bit smaller). Iteration time on a tree that already fits on one card should drop to something like 55–65% (the exchange plus the duplicated trunk plus imperfect overlap). A tree that does not fit on one card has no one-GPU time to compare; the success criterion is that it allocates and that its root strategy matches a smaller configuration, as in [Verification](#6-how-to-verify-on-the-machine).
 
@@ -358,14 +391,7 @@ Two cards do not change the shape of the betting tree. Going from a 25bb tree (`
 
 Opt-in. `HipPCfrSolver` with one device keeps today's constructor, today's graph, and today's kernel launches. The default UI selection stays one GPU.
 
-**Step 0 — make the single-GPU path trustworthy at the sizes two GPUs will reach.** Do this inside `HipPCfrSolver` before adding a second device. The dual-GPU code should call the same kernels.
-
-- Change `total_trainable_size` and `total_leaf_nodes` to `size_t` (or `int64_t`), and the index fields in `GpuState` only if a single shard can exceed 2^31 states. A shard will not, for two cards. The **sum** used to size an allocation might, if anyone still builds the full tree on the host. Count per device.
-- Stop launching the reach and utility kernels as `uint16_t` when `use_fp16` is set. Template regrets and `d_cum_strategies` only. Keep reach, utilities, and leaf utilities as `float` in both the allocation and the kernel. See the bug below.
-- In `backward_pass_kernel`, compute every action's current strategy for a hand **before** writing any regret for that hand, or match `updateRegrets` exactly: write all regrets, then one `compute_strategy_prob` pass, then the `theta` accumulate. Same math on every device.
-- Delete the unused `hipHostMalloc` of `T` floats.
-- Make `hip_allocate_device` failure throw. Remove the `exit(-1)` from the predictor, and count the lock buffer as `(T + 7) / 8`.
-- Add `--offload-arch=gfx1200` only after the ROCm upgrade in [Build and toolchain](#build-and-toolchain). While doing that, compile `HipPCfrSolver.cpp` against the same ROCm include path the `.hip` file uses.
+**Step 0 — do not change solver math in this change.** The second GPU calls the kernels that already ship. No edit to `compute_strategy_prob`, the DCFR scale, fp16, or the chance formula. The fp16 template bug, the 32-bit counters, and the unused pinned buffer are listed under bugs so they are not forgotten. They are not part of turning the second card on, because each one changes memory layout or numerical results. Count trainable slots per device in `size_t` inside the new coordinator so a sharded build does not wrap a single global `int`, and leave the one-GPU counters alone until you choose to touch them.
 
 **Step 1 — tag states, still one allocation.** In `buildGpuStates`, record on the host side (not necessarily in `GpuState`) the shard key:
 
@@ -444,7 +470,7 @@ size_t reach_probs_bytes = (size_t)max_level_size * total_node_data_size * sizeo
 hip_copy_to_device(d_reach_probs_in, root_reach_probs.data(), root_reach_probs.size() * sizeof(float));
 ```
 
-A host float `1.0f` read back as the low 16 bits is not `1.0` in half. Level 0 reach is garbage, and every later level is half-precision written by that garbage. The UI checkbox turns this on (`use_halffloats = 2` → `use_fp16 true`). Solves that "work" today are very likely the checkbox-off, fp32 path. Any dual-GPU comparison should be run fp32 until this is fixed. After the fix, treat river-only fp16 as in the table above.
+A host float `1.0f` read back as the low 16 bits is not `1.0` in half. Level 0 reach is garbage, and every later level is half-precision written by that garbage. The UI checkbox turns this on (`use_halffloats = 2` → `use_fp16 true`). `scripts/run_solver_worker.py` retries with `set_use_fp16 1` when the process exits 255, which is the VRAM predictor giving up. Jobs that only finish on that retry are the ones this bug applies to. fp32 solves are unaffected. Leave the kernel as it is for the multi-GPU work. When you do want fp16 to mean "half regrets only", that is a one-kernel-template change and it should be checked on one GPU before it is copied to two. River-only half regrets, matching `DiscountedCfrTrainableHF`, are the variant that matches the CPU and avoids putting half-size reach into the chance exchange.
 
 `read_val` also casts `uint16_t` storage through `__half`. The bit patterns match IEEE fp16, so that part is fine once the buffer really is half. Host conversion uses `half_float::half` from `include/tools/half-1-12-0.h`, which is the same layout the CPU HF trainer uses.
 
@@ -464,22 +490,20 @@ Described in [Regret update versus the CPU trainer](#regret-update-versus-the-cp
 
 ### Build and toolchain
 
-HIP 5.7 with clang 17 is ROCm 5.7 (2023). It has no gfx1200 target. `--offload-arch=native` in `GPUPokerSolver.pro` will not produce a working binary for an RX 9060 XT on that compiler: the ISA is RDNA4, and an RDNA3 (gfx1100) image will not load.
+The install that actually runs this solver is `/opt/rocm`, and it already targets gfx1200.
 
-RX 9060 XT (gfx1200) is a supported ROCm target starting with **ROCm 6.4.1**. Later 7.x releases list it explicitly. HIP 5.7 is too old regardless of which 6.4/7.x point release is chosen. Upgrade the driver, `hipcc`, and the userspace libraries together, then confirm:
+- `run.sh` sets `LD_LIBRARY_PATH=/opt/rocm/lib` and `HSA_ENABLE_SDMA=0`, then executes `build/GPUPokerSolver`. That is the GUI launch that has been used on these cards.
+- `scripts/run_solver_worker.py` and `scripts/generate_training_data.py` prepend `/opt/rocm/core-7.13/lib`. That `core-7.13` directory is the ROCm 7 component layout, not ROCm 5.7.
+- The README installs PyTorch from the `rocm7.2` wheel index.
+- `GPUPokerSolver.pro` compiles `HipKernels.hip` with `/opt/rocm/bin/hipcc -c --offload-arch=native`. On this box `native` is gfx1200, which is why the binary runs there. Leave that flag. Pinning `gfx1200` is optional and is not required to keep the current build working.
 
-```
-rocminfo | grep -E 'Name:|gfx'
-hipcc --version
-```
+A `hipcc --version` that prints HIP 5.7 and clang 17 is a different binary on `PATH`. Check `which hipcc` against `/opt/rocm/bin/hipcc --version` before treating it as the compiler that built `build/GPUPokerSolver`. The earlier "upgrade off HIP 5.7 or the card will not run" conclusion does not apply to this tree as it is launched today.
 
-`rocminfo` should show two devices, both `gfx1200`. `hipcc --version` should be the HIP that ships with that ROCm, not a leftover 5.7 on `PATH`.
+The qmake rule compiles the `.hip` file with an explicit `-isystem /opt/rocm/include` and links `-L/opt/rocm/lib -lamdhip64`. `HipPCfrSolver.cpp` is a normal `SOURCES` entry, compiled by g++, and the `.pro` file does not add the ROCm include path to g++. The `.cpp` includes `<hip/hip_runtime.h>`. That has clearly succeeded on the machine that produced the current binary (system include path or `CPATH`). A clean build on a machine where g++ cannot see `/opt/rocm/include` would need that `-I` added. Not a reason to change the working `run.sh` launch.
 
-The qmake rule compiles `HipKernels.hip` with `/opt/rocm/bin/hipcc` and an include path, and compiles `HipPCfrSolver.cpp` as a normal `SOURCES` entry with g++. The `.pro` file does not add `-I/opt/rocm/include` to the g++ flags. The `.cpp` includes `<hip/hip_runtime.h>` and calls `hipStream*`, `hipGraph*`, and `hipHostMalloc`. That translation unit needs the ROCm include path and needs to link `libamdhip64`, which the `.pro` file does add (`-L/opt/rocm/lib -lamdhip64`). After the upgrade, pin `--offload-arch=gfx1200` so a stray GPU on the box cannot retarget the binary via `native`.
+`GpuTypes.h` marks `unpack_*` as `__device__` only, and `HipPCfrSolver.cpp` calls them on the host. g++ is ignoring the attribute, which is why the current binary links. Mark them `__host__ __device__` only when that header is next edited for another reason.
 
-`GpuTypes.h` marks `unpack_*` as `__device__` only. `HipPCfrSolver.cpp` calls them on the host (`syncStrategiesToCpuTree`, the lock setup). That is ill-formed HIP. It survives only if g++ ignores the `__device__` attribute. Mark them `__host__ __device__` when the file is next edited so a hipcc host compile does not break.
-
-Graph APIs used here (`hipStreamBeginCapture`, `hipGraphInstantiate`, `hipGraphLaunch`) exist on ROCm 5.7 and on 6.4/7.x. Return codes are ignored. On a new ROCm, check them once; a failed capture currently looks like a mysterious launch failure on iteration 0.
+Graph capture return codes are ignored. A failed capture looks like a bad launch on iteration 0. Worth checking if a two-device graph is added. The one-GPU path already captures a graph successfully on this ROCm, so leave it.
 
 ### Other behavioral risks
 
@@ -500,18 +524,20 @@ Graph APIs used here (`hipStreamBeginCapture`, `hipGraphInstantiate`, `hipGraphL
 
 ## 6. How to verify on the machine
 
-Do this after the ROCm upgrade and after step 0, and again when the two-GPU path exists. This environment has no GPU, so none of the following was run here.
+The current `run.sh` binary is the baseline. This environment has no GPU, so none of the following was run here.
 
-### Toolchain
+### Two workers, before any solver change
 
-1. `rocminfo` shows two agents, both `gfx1200`, with about 16 GB each.
-2. `hipcc --version` is the new ROCm's HIP, and `which hipcc` is `/opt/rocm/bin/hipcc` (or the path the `.pro` file calls).
-3. A one-line HIP program prints `hipGetDeviceCount() == 2`, the PCI bus id of each device, free and total memory, and the two `hipDeviceCanAccessPeer` results. Save that output with the test notes. If peer access is false, the host-staged path is the one under test. That is a pass, not a failure.
-4. Build with `--offload-arch=gfx1200`. A binary built with HIP 5.7 or with `gfx1100` is not a test of this solver on these cards.
+Launch the training worker twice, with `run.sh`'s environment (`/opt/rocm/lib` on `LD_LIBRARY_PATH`, `HSA_ENABLE_SDMA=0`) and a different `HIP_VISIBLE_DEVICES` on each. `rocm-smi` should show both cards busy on different jobs, and the `training_samples` rows should move to `solved` independently. If one process still sees both GPUs, `HIP_VISIBLE_DEVICES` was not set in that process. This test does not involve a reach or utility copy.
+
+### Toolchain, only if a later one-solve split is built
+
+1. `rocminfo` shows two agents, both `gfx1200`, about 16 GB each. `/opt/rocm/bin/hipcc --version` is the compiler the `.pro` file calls.
+2. A one-line HIP program prints `hipGetDeviceCount() == 2`, both PCI bus ids, free and total memory, and both `hipDeviceCanAccessPeer` results. Peer access false means the host-staged path is the one under test. That is a pass. Keep `HSA_ENABLE_SDMA=0`.
 
 ### Correctness, one GPU against two
 
-Use fp32 (`gpuFp16CheckBox` off) until the template bug is fixed. Same tree, same ranges, same iteration count, `print_interval` larger than the iteration count so the CPU exploitability pass does not run in the middle (it is slow and it allocates). Compare at the end.
+Use the same precision on both sides. fp32 (`set_use_fp16` left off, which is what the worker tries first) is the clean comparison. Same tree, same ranges, same iteration count, `print_interval` larger than the iteration count so the CPU exploitability pass does not run in the middle. Compare at the end.
 
 Pick three spots, in this order:
 
@@ -539,8 +565,7 @@ On the flop spot that fits on one card, time 50 iterations with exploitability p
 ### What not to use as evidence
 
 - A single screenshot of the VRAM log. The behavior that matters is: same strategy on a shared spot, successful allocation on a spot that previously failed, host RAM still alive at the first sync.
-- Exploitability versus the CPU solver as the dual-GPU test. The GPU average strategy already differs from `DiscountedCfrTrainable` because of the update-order bug, and the CPU walk applies isomorphism. Use CPU exploitability as a quality metric after the update-order fix. Use one-GPU versus two-GPU as the split test.
-- A run under HIP 5.7. It is not executing gfx1200 code.
+- Exploitability versus the CPU solver as the dual-GPU test. Compare one GPU against two GPUs running the same kernels. A difference there is a bad split. A difference against the CPU trainer is the existing update-order gap and is not introduced by the second card.
 
 ---
 
@@ -550,6 +575,6 @@ On the flop spot that fits on one card, time 50 iterations with exploitability p
 
 On a 52-card flop the river multiplier is about 2352. A short 25bb tree with a few hundred combos is a few GB. The same formulas put a medium betting tree, or a wide range, on or past 16 GB, and the `int` trainable counter overflows at about 8 GB of fp16 regret-pair data. Host copies of those same strategies can be larger than VRAM.
 
-Use the two RX 9060 XTs by giving each a subset of turn cards (flop) or river cards (turn), running the existing subtree kernels locally, and exchanging reach and utility once per iteration at the chance node. The denominator of the chance scale and the trunk's regret update stay global. Host-staged PCIe copies are the right default. That is about a 1.8× capacity gain and a similar iteration-time gain on flop solves, and it leaves the one-GPU HIP graph untouched when the flag is off.
+Use both cards first as two processes (`HIP_VISIBLE_DEVICES` 0 and 1 on `scripts/run_solver_worker.py`, same `/opt/rocm` launch as `run.sh`). No solver change, no vector copy, twice the jobs, each job still one card.
 
-Upgrade off HIP 5.7 before any of this is runnable on gfx1200. ROCm 6.4.1 is the first release that supports the RX 9060 XT; use that generation or newer, with `--offload-arch=gfx1200`. Fix the fp16 reach/utility template and the 32-bit sizes on the single-GPU path first, or a two-GPU result has nothing solid to match.
+A single pot larger than 16 GB is the turn-card (or river-card) split of the same kernels. There is no activation vector. Each iteration copies the reach vector down at the chance node and the utility vector back up. Regrets stay on the card that owns that street card. That is about 1.8× the bytes of one card, and the one-GPU path stays the default when the flag is off. `HSA_ENABLE_SDMA=0` stays set. Strategy math stays as it is until a later pass.
